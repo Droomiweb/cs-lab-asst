@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth/next';
 // --- FIX: Go up one directory first ---
 import { authOptions } from '../auth/[...nextauth]/route'; // Adjust path if needed
 import dbConnect from '../../lib/mongodb';
-import Image from '../../models/Image'; // Your Image model
+import Image from '@/models/Image'; // Your Image model
 
 export async function POST(request) {
   // 1. Check for authenticated user
