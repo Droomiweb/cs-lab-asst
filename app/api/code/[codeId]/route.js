@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
-import dbConnect from '@/app/lib/mongodb'; // CORRECTED
-import Code from '@/app/models/Code'; // CORRECTED
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; 
+import dbConnect from '@/app/lib/mongodb'; 
+import Code from '@/app/models/Code'; 
 
-// --- GET Handler (with fix) ---
+// --- GET Handler (No Change) ---
 export async function GET(request, { params: paramsPromise }) {
   
-  // Await the promise to get the actual params object
   const params = await paramsPromise;
   const { codeId } = params;
 
@@ -32,15 +31,13 @@ export async function GET(request, { params: paramsPromise }) {
   }
 }
 
-// --- NEW DELETE Handler ---
+// --- DELETE Handler (MODIFIED) ---
 export async function DELETE(request, { params: paramsPromise }) {
-  // 1. Get user session
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  // 2. Await and get codeId from params
   const params = await paramsPromise;
   const { codeId } = params;
 
@@ -51,21 +48,21 @@ export async function DELETE(request, { params: paramsPromise }) {
   try {
     await dbConnect();
 
-    // 3. Find the code snippet in the database
     const code = await Code.findById(codeId);
     if (!code) {
       return NextResponse.json({ message: 'Code snippet not found' }, { status: 404 });
     }
 
-    // 4. Check if the current user is the uploader
-    if (code.uploadedBy.toString() !== session.user.id) {
+    // --- MODIFICATION ---
+    // Allow delete if user is the uploader OR if the user is an admin
+    if (code.uploadedBy.toString() !== session.user.id && session.user.role !== 'admin') {
       return NextResponse.json(
         { message: 'You are not authorized to delete this snippet' },
-        { status: 403 } // 403 Forbidden
+        { status: 403 }
       );
     }
+    // --- END MODIFICATION ---
 
-    // 5. Delete the code snippet from MongoDB
     await Code.findByIdAndDelete(codeId);
 
     return NextResponse.json(

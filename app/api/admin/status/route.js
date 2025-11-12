@@ -8,28 +8,24 @@ import Image from '@/app/models/Image';
 import Code from '@/app/models/Code';
 
 export async function GET(request) {
-  // 1. Get user session
   const session = await getServerSession(authOptions);
 
-  // 2. Check if user is an admin
   if (!session || session.user.role !== 'admin') {
     return NextResponse.json(
       { message: 'Access Denied: You are not an admin.' },
-      { status: 403 } // 403 Forbidden
+      { status: 403 }
     );
   }
 
-  // 3. If admin, proceed to fetch data
   try {
     await dbConnect();
 
-    // Fetch all users (but remove their passwords from the response!)
     const users = await User.find({}).select('-password');
     const folders = await Folder.find({});
     const images = await Image.find({});
     const codes = await Code.find({});
 
-    // 4. Return the stats and data
+    // --- MODIFIED: Return all data ---
     return NextResponse.json(
       {
         userCount: users.length,
@@ -38,10 +34,12 @@ export async function GET(request) {
         codeCount: codes.length,
         users: users,
         folders: folders,
-        // We could send images and codes too, but let's start with this
+        images: images, // Added
+        codes: codes    // Added
       },
       { status: 200 }
     );
+    // --- END MODIFICATION ---
 
   } catch (error) {
     return NextResponse.json(
