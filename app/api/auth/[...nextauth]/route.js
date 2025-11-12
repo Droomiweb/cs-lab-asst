@@ -1,5 +1,9 @@
 import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth-providers/credentials';
+// --- THIS IS THE FIX ---
+// The path should be 'next-auth/providers/credentials'
+import CredentialsProvider from 'next-auth/providers/credentials';
+// --- END FIX ---
+
 import dbConnect from '@/app/lib/mongodb'; 
 import User from '@/app/models/User'; 
 import bcrypt from 'bcrypt';
@@ -16,8 +20,6 @@ export const authOptions = {
       async authorize(credentials) {
         await dbConnect();
 
-        // --- MODIFIED ---
-        // Find the user and also get their role
         const user = await User.findOne({ username: credentials.username });
         if (!user) {
           throw new Error('No user found with this username.');
@@ -32,12 +34,11 @@ export const authOptions = {
           throw new Error('Incorrect password.');
         }
 
-        // --- MODIFIED ---
-        // Return the user object for the session, including the new role
+        // Return user object for the session
         return {
           id: user._id,
           username: user.username,
-          role: user.role, // <-- Add this
+          role: user.role, // Include the role
         };
       }
     })
@@ -53,7 +54,7 @@ export const authOptions = {
       if (user) {
         token.id = user.id;
         token.username = user.username;
-        token.role = user.role; // <-- Add this
+        token.role = user.role; // Add role to token
       }
       return token;
     },
@@ -62,18 +63,19 @@ export const authOptions = {
       if (token) {
         session.user.id = token.id;
         session.user.username = token.username;
-        session.user.role = token.role; // <-- Add this
+        session.user.role = token.role; // Add role to session
       }
       return session;
     }
   },
 
   pages: {
-    signIn: '/login',
+    signIn: '/login', 
   },
 
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// In the App Router, we export GET and POST handlers
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

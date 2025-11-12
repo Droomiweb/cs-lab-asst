@@ -32,7 +32,8 @@ export default function AdminPage() {
     const fetchAdminData = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/admin/stats');
+        // --- MODIFIED: Corrected API endpoint ---
+        const res = await fetch('/api/admin/status');
         if (!res.ok) {
           throw new Error('Failed to fetch admin data. Are you an admin?');
         }

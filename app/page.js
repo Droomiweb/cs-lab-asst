@@ -17,6 +17,10 @@ export default function HomePage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  
+  // --- MODIFIED: Added error state for deletion ---
+  const [deleteError, setDeleteError] = useState('');
+
 
   // --- Fetch all folders when component loads ---
   const fetchFolders = async () => {
@@ -42,6 +46,7 @@ export default function HomePage() {
     e.preventDefault();
     setError('');
     setMessage('');
+    setDeleteError(''); // Clear delete error
 
     const res = await fetch('/api/folders', {
       method: 'POST',
@@ -69,6 +74,34 @@ export default function HomePage() {
     }
   };
 
+  // --- MODIFIED: Added Delete Folder Handler ---
+  const handleDeleteFolder = async (e, folderId) => {
+    e.preventDefault(); // Stop Link navigation
+    e.stopPropagation(); // Stop Link navigation
+    
+    setDeleteError(''); // Clear old errors
+    if (!confirm('Are you sure you want to delete this folder and ALL its contents? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/folder/${folderId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        // Remove folder from local state
+        setFolders(folders.filter(f => f._id !== folderId));
+      } else {
+        throw new Error(data.message || 'Failed to delete folder.');
+      }
+    } catch (err) {
+      setDeleteError(err.message);
+    }
+  };
+
   return (
     <div className="container p-4 mx-auto max-w-7xl">
       
@@ -77,7 +110,6 @@ export default function HomePage() {
         {session && !showCreateForm && (
           <button
             onClick={() => setShowCreateForm(true)}
-            // --- MODIFIED: Replaced sky with indigo ---
             className="px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md shadow-md hover:bg-indigo-700"
           >
             + Create New Folder
@@ -86,7 +118,6 @@ export default function HomePage() {
 
         {showCreateForm && (
           <div className="p-6 my-4 bg-white rounded-lg shadow-lg">
-            {/* --- MODIFIED: Replaced sky with indigo --- */}
             <h2 className="mb-4 text-2xl font-bold text-indigo-800">
               New Folder
             </h2>
@@ -97,7 +128,6 @@ export default function HomePage() {
                 <input
                   type="text" id="folderName" required
                   value={folderName} onChange={(e) => setFolderName(e.target.value)}
-                  // --- MODIFIED: Replaced sky with indigo ---
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -108,7 +138,6 @@ export default function HomePage() {
                 <textarea
                   id="description" rows="3"
                   value={description} onChange={(e) => setDescription(e.target.value)}
-                  // --- MODIFIED: Replaced sky with indigo ---
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
               </div>
@@ -119,7 +148,6 @@ export default function HomePage() {
                   id="enablePassword" type="checkbox"
                   checked={isPasswordEnabled}
                   onChange={(e) => setIsPasswordEnabled(e.target.checked)}
-                  // --- MODIFIED: Replaced sky with indigo ---
                   className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500"
                 />
                 <label htmlFor="enablePassword" className="ml-2 block text-sm font-medium text-gray-700">
@@ -134,7 +162,6 @@ export default function HomePage() {
                   <input
                     type="password" id="password"
                     value={password} onChange={(e) => setPassword(e.target.value)}
-                    // --- MODIFIED: Replaced sky with indigo ---
                     className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
@@ -144,7 +171,6 @@ export default function HomePage() {
               <div className="flex items-center space-x-4">
                 <button
                   type="submit"
-                  // --- MODIFIED: Replaced sky with indigo ---
                   className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                 >
                   Create
@@ -165,10 +191,17 @@ export default function HomePage() {
       </div>
 
       {/* --- Folders List --- */}
-      {/* --- MODIFIED: Replaced sky with indigo --- */}
       <h1 className="pb-4 mb-6 text-3xl font-bold border-b border-gray-300 text-indigo-900">
         All Folders
       </h1>
+
+      {/* --- MODIFIED: Added delete error display --- */}
+      {deleteError && (
+        <div className="p-4 mb-4 text-red-800 bg-red-100 border border-red-300 rounded-md">
+          <p>Error: {deleteError}</p>
+        </div>
+      )}
+
       {loading ? (
         <p>Loading folders...</p>
       ) : (
@@ -177,10 +210,9 @@ export default function HomePage() {
             <Link 
               href={`/folder/${folder._id}`} 
               key={folder._id}
-              className="block p-5 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="relative block p-5 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center justify-between mb-2">
-                {/* --- MODIFIED: Replaced sky with indigo --- */}
                 <h3 className="text-xl font-semibold text-indigo-800">
                   {folder.name}
                 </h3>
@@ -193,8 +225,20 @@ export default function HomePage() {
               <p className="mb-4 text-gray-600 min-h-[3em]">
                 {folder.description || 'No description.'}
               </p>
-              <div className="text-sm text-gray-500">
-                Created by: <span className="font-medium">{folder.creatorUsername}</span>
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <span>
+                  Created by: <span className="font-medium">{folder.creatorUsername}</span>
+                </span>
+                
+                {/* --- MODIFIED: Added Delete Button --- */}
+                {session?.user?.id === folder.createdBy && (
+                  <button
+                    onClick={(e) => handleDeleteFolder(e, folder._id)}
+                    className="z-10 px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </Link>
           ))}

@@ -226,15 +226,7 @@ export default function FolderPage() {
           {/* Image Section */}
           {view === 'images' && (
             <div id="image-section">
-              {/* Inline uploader (optional), and also available in modal */}
-              {session && (
-                <div className="mb-4">
-                  <ImageUploader
-                    folderId={folderId}
-                    onUploadComplete={fetchImages}
-                  />
-                </div>
-              )}
+              {/* --- MODIFIED: Removed inline ImageUploader --- */}
 
               {loadingImages ? (
                 <p className="mt-6">Loading images...</p>
@@ -270,15 +262,7 @@ export default function FolderPage() {
           {/* Code Section */}
           {view === 'codes' && (
             <div id="code-section">
-              {/* Inline code uploader (optional) */}
-              {session && (
-                <div className="mb-4">
-                  <CodeUploader
-                    folderId={folderId}
-                    onUploadComplete={fetchCodes}
-                  />
-                </div>
-              )}
+              {/* --- MODIFIED: Removed inline CodeUploader --- */}
 
               {loadingCodes ? (
                 <p className="mt-6">Loading code snippets...</p>

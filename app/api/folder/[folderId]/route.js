@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/mongodb'; // CORRECTED
-import Folder from '@/app/models/Folder'; // CORRECTED
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { del as deleteFromBlob } from '@vercel/blob'; // Import Vercel Blob delete
+import dbConnect from '@/app/lib/mongodb';
+import Folder from '@/app/models/Folder';
+import Image from '@/app/models/Image'; // Need this to delete images
+import Code from '@/app/models/Code';   // Need this to delete codes
 
-// Note the change here: { params: paramsPromise }
+// --- GET Handler (Existing) ---
 export async function GET(request, { params: paramsPromise }) {
   
-  // --- THE FIX ---
   // Await the promise to get the actual params object
   const params = await paramsPromise;
-  // --- END FIX ---
-
-  // Now this will work correctly
   const { folderId } = params;
 
-  // This guard will now correctly check the real folderId
   if (!folderId || folderId === "undefined") {
     return NextResponse.json(
       { message: 'Invalid folder ID' },
@@ -34,18 +34,12 @@ export async function GET(request, { params: paramsPromise }) {
       );
     }
 
-    // --- IMPORTANT ---
-    // We send back the folder's public data.
-    // We do NOT send the hashed password.
-    // Instead, we just send a boolean letting the
-    // client know if a password is set or not.
-
     const folderData = {
       _id: folder._id,
       name: folder.name,
       description: folder.description,
       creatorUsername: folder.creatorUsername,
-      // !!folder.password is a trick to turn a string (or null) into a boolean
+      createdBy: folder.createdBy, // --- MODIFIED: Send createdBy ID ---
       isPasswordProtected: !!folder.password, 
     };
 
@@ -58,6 +52,68 @@ export async function GET(request, { params: paramsPromise }) {
     // This catches invalid ObjectIDs or other server errors
     return NextResponse.json(
       { message: 'Error fetching folder', error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// --- NEW DELETE Handler ---
+export async function DELETE(request, { params: paramsPromise }) {
+  // 1. Get user session
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+  }
+
+  // 2. Get folderId
+  const params = await paramsPromise;
+  const { folderId } = params;
+
+  if (!folderId) {
+    return NextResponse.json({ message: 'Folder ID required' }, { status: 400 });
+  }
+
+  try {
+    await dbConnect();
+
+    // 3. Find the folder
+    const folder = await Folder.findById(folderId);
+    if (!folder) {
+      return NextResponse.json({ message: 'Folder not found' }, { status: 404 });
+    }
+
+    // 4. Check authorization
+    if (folder.createdBy.toString() !== session.user.id) {
+      return NextResponse.json(
+        { message: 'You are not authorized to delete this folder' },
+        { status: 403 } // 403 Forbidden
+      );
+    }
+
+    // 5. Find all associated images and delete them from Vercel Blob
+    const images = await Image.find({ folderId: folderId });
+    if (images.length > 0) {
+      // Create an array of delete promises
+      const deletePromises = images.map(image => deleteFromBlob(image.url));
+      // Wait for all blob deletions to complete
+      await Promise.all(deletePromises);
+    }
+
+    // 6. Delete all associated Image and Code documents from MongoDB
+    await Image.deleteMany({ folderId: folderId });
+    await Code.deleteMany({ folderId: folderId });
+
+    // 7. Delete the folder itself
+    await Folder.findByIdAndDelete(folderId);
+
+    return NextResponse.json(
+      { message: 'Folder and all its contents deleted successfully' },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    return NextResponse.json(
+      { message: 'Error deleting folder', error: error.message },
       { status: 500 }
     );
   }
