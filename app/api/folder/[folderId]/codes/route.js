@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/mongodb';
-import Code from '../../../../models/Code'; // Use the Code model
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Code from '@/app/models/Code'; // CORRECTED
 
 // Note the change here: { params: paramsPromise }
 export async function GET(request, { params: paramsPromise }) {

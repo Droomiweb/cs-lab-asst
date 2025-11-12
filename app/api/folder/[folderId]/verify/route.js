@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/mongodb';
-import Folder from '../../../../models/Folder';
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Folder from '@/app/models/Folder'; // CORRECTED
 import bcrypt from 'bcrypt';
 
 export async function POST(request) {

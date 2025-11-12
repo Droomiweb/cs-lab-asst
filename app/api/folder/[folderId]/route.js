@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../lib/mongodb';
-import Folder from '../../../models/Folder';
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Folder from '@/app/models/Folder'; // CORRECTED
 
 // Note the change here: { params: paramsPromise }
 export async function GET(request, { params: paramsPromise }) {
@@ -10,17 +10,11 @@ export async function GET(request, { params: paramsPromise }) {
   const params = await paramsPromise;
   // --- END FIX ---
 
-  console.log(`--- NEW REQUEST ---`);
-  console.log("Request URL:", request.url);
-  console.log("Received params object (now resolved):", params);
-
   // Now this will work correctly
   const { folderId } = params;
-  console.log("Extracted folderId:", folderId);
 
   // This guard will now correctly check the real folderId
   if (!folderId || folderId === "undefined") {
-    console.warn(`Request stopped: folderId is '${folderId}'. URL:`, request.url);
     return NextResponse.json(
       { message: 'Invalid folder ID' },
       { status: 400 } // 400 Bad Request
@@ -42,7 +36,9 @@ export async function GET(request, { params: paramsPromise }) {
 
     // --- IMPORTANT ---
     // We send back the folder's public data.
-    // ... (rest of your original code)
+    // We do NOT send the hashed password.
+    // Instead, we just send a boolean letting the
+    // client know if a password is set or not.
 
     const folderData = {
       _id: folder._id,
@@ -60,7 +56,6 @@ export async function GET(request, { params: paramsPromise }) {
 
   } catch (error) {
     // This catches invalid ObjectIDs or other server errors
-    console.error(`Error fetching folder ${folderId}:`, error.message); 
     return NextResponse.json(
       { message: 'Error fetching folder', error: error.message },
       { status: 500 }

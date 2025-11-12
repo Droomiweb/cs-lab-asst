@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/mongodb';
-// Make sure this path is correct, or use the alias '@/models/Image'
-import Image from '@/models/Image'; 
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Image from '@/app/models/Image'; // CORRECTED
 
 // Note the change here: { params: paramsPromise }
 export async function GET(request, { params: paramsPromise }) {

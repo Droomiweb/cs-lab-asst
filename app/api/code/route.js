@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
-import dbConnect from '../../lib/mongodb';
-import Code from '../..//models/Code'; // Our new Code model
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Code from '@/app/models/Code'; // CORRECTED
 
 export async function POST(request) {
   // 1. Check for authenticated user

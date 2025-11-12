@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
 import { del } from '@vercel/blob'; // Import the 'del' function
-import dbConnect from '../../../../../lib/mongodb';
-import Image from '@/models/Image';
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Image from '@/app/models/Image'; // CORRECTED
 
 export async function DELETE(request, { params }) {
   // 1. Get user session

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-// This path goes up from [codeId] to 'code', then up to 'api'
-import { authOptions } from '../../auth/[...nextauth]/route'; 
-import dbConnect from '../../../lib/mongodb';
-import Code from '../../../models/Code';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Code from '@/app/models/Code'; // CORRECTED
 
 // --- GET Handler (with fix) ---
 export async function GET(request, { params: paramsPromise }) {

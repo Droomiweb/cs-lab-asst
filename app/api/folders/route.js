@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route'; // Import authOptions
-import dbConnect from '../../lib/mongodb';
-import Folder from '../../models/Folder';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Folder from '@/app/models/Folder'; // CORRECTED
 import bcrypt from 'bcrypt';
 
 // --- GET: Fetch all folders ---

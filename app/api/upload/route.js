@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob'; // Vercel Blob upload function
 import { getServerSession } from 'next-auth/next';
-// --- FIX: Go up one directory first ---
-import { authOptions } from '../auth/[...nextauth]/route'; // Adjust path if needed
-import dbConnect from '../../lib/mongodb';
-import Image from '@/models/Image'; // Your Image model
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // CORRECTED
+import dbConnect from '@/app/lib/mongodb'; // CORRECTED
+import Image from '@/app/models/Image'; // CORRECTED
 
 export async function POST(request) {
   // 1. Check for authenticated user
