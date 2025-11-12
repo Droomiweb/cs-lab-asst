@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"] // Assumes no 'src' folder
+      // OR
+      // "@/*": ["./src/*"] // Use this if you have a 'src' folder
     }
   }
 }
