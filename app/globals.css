@@ -12,12 +12,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* We remove the @media (prefers-color-scheme: dark) rule.
+  This was causing the text to become light grey (#ededed) 
+  while the layout.js was forcing a light (bg-sky-50) background,
+  making the text invisible.
+*/
 
 body {
   background: var(--background);

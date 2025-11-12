@@ -1,40 +1,36 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useState } from 'react'; // For "Copied!" message
+import { useState } from 'react';
 
-// Accept the new onCodeDeleted prop
+// Accepts: codes (array), onCodeDeleted (function)
 export default function CodeList({ codes, onCodeDeleted }) {
   const { data: session } = useSession();
-  // State to track which button is clicked for "Copied!" message
   const [copiedId, setCopiedId] = useState(null);
 
-  const handleCopy = (code) => {
-    // Use the browser's built-in clipboard API
-    navigator.clipboard.writeText(code.content);
-    setCopiedId(code._id);
-    // Reset the "Copied!" message after 2 seconds
-    setTimeout(() => {
-      setCopiedId(null);
-    }, 2000);
+  const handleCopy = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code.content || '');
+      setCopiedId(code._id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      alert('Failed to copy to clipboard.');
+    }
   };
 
   const handleDelete = async (codeId) => {
-    if (!confirm('Are you sure you want to delete this code snippet?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this code snippet?')) return;
 
     try {
-      const res = await fetch(`/api/code/${codeId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await res.json();
+      const res = await fetch(`/api/code/${codeId}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        // Tell the parent page to remove this code from the list
-        onCodeDeleted(codeId);
+        // Inform parent to remove locally
+        if (typeof onCodeDeleted === 'function') {
+          onCodeDeleted(codeId);
+        }
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Error: ${data.message || 'Failed to delete.'}`);
       }
     } catch (err) {
       alert(`An error occurred: ${err.message}`);
@@ -59,10 +55,10 @@ export default function CodeList({ codes, onCodeDeleted }) {
           {/* File Info */}
           <div className="flex-1 mb-3 sm:mb-0">
             <a
-              href={`/api/code/${code._id}`} // Link directly to the raw file API
-              target="_blank" // Open in a new tab
+              href={`/api/code/${code._id}`}
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-lg font-semibold text-sky-700 hover:text-sky-900 hover:underline"
+              className="text-lg font-semibold text-indigo-700 hover:text-indigo-900 hover:underline"
               title="Click to open raw file in new tab"
             >
               {code.filename}
@@ -71,7 +67,7 @@ export default function CodeList({ codes, onCodeDeleted }) {
               Saved by {code.uploaderUsername} on {new Date(code.createdAt).toLocaleDateString()}
             </p>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center flex-shrink-0 space-x-2">
             {/* Copy Button */}
@@ -85,14 +81,14 @@ export default function CodeList({ codes, onCodeDeleted }) {
             {/* Download Button */}
             <a
               href={`/api/code/${code._id}`}
-              download={code.filename} // This HTML attribute triggers a download
-              className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700"
+              download={code.filename}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
             >
               Download
             </a>
 
-            {/* Delete Button (Conditional) */}
-            {session?.user.id === code.uploadedBy && (
+            {/* Delete Button (only for uploader) */}
+            {session?.user?.id === code.uploadedBy && (
               <button
                 onClick={() => handleDelete(code._id)}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"

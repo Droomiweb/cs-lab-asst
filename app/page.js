@@ -77,7 +77,8 @@ export default function HomePage() {
         {session && !showCreateForm && (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="px-6 py-3 font-semibold text-white bg-sky-600 rounded-md shadow-md hover:bg-sky-700"
+            // --- MODIFIED: Replaced sky with indigo ---
+            className="px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md shadow-md hover:bg-indigo-700"
           >
             + Create New Folder
           </button>
@@ -85,7 +86,8 @@ export default function HomePage() {
 
         {showCreateForm && (
           <div className="p-6 my-4 bg-white rounded-lg shadow-lg">
-            <h2 className="mb-4 text-2xl font-bold text-sky-800">
+            {/* --- MODIFIED: Replaced sky with indigo --- */}
+            <h2 className="mb-4 text-2xl font-bold text-indigo-800">
               New Folder
             </h2>
             <form onSubmit={handleCreateFolder} className="space-y-4">
@@ -95,7 +97,8 @@ export default function HomePage() {
                 <input
                   type="text" id="folderName" required
                   value={folderName} onChange={(e) => setFolderName(e.target.value)}
-                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  // --- MODIFIED: Replaced sky with indigo ---
+                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
@@ -105,7 +108,8 @@ export default function HomePage() {
                 <textarea
                   id="description" rows="3"
                   value={description} onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  // --- MODIFIED: Replaced sky with indigo ---
+                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
               </div>
 
@@ -115,7 +119,8 @@ export default function HomePage() {
                   id="enablePassword" type="checkbox"
                   checked={isPasswordEnabled}
                   onChange={(e) => setIsPasswordEnabled(e.target.checked)}
-                  className="w-4 h-4 rounded text-sky-600 border-gray-300 focus:ring-sky-500"
+                  // --- MODIFIED: Replaced sky with indigo ---
+                  className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500"
                 />
                 <label htmlFor="enablePassword" className="ml-2 block text-sm font-medium text-gray-700">
                   Enable Security Password
@@ -129,7 +134,8 @@ export default function HomePage() {
                   <input
                     type="password" id="password"
                     value={password} onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                    // --- MODIFIED: Replaced sky with indigo ---
+                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
               )}
@@ -138,7 +144,8 @@ export default function HomePage() {
               <div className="flex items-center space-x-4">
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold text-white bg-sky-600 rounded-md hover:bg-sky-700"
+                  // --- MODIFIED: Replaced sky with indigo ---
+                  className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                 >
                   Create
                 </button>
@@ -158,49 +165,41 @@ export default function HomePage() {
       </div>
 
       {/* --- Folders List --- */}
-
-    'use client';
-
-// ... all your existing useState, useEffect, handleCreateFolder, etc. ...
-
-// --- FOLDERS LIST (This is the part to update) ---
-<h1 className="pb-4 mb-6 text-3xl font-bold border-b border-gray-300 text-sky-900">
-  All Folders
-</h1>
-{loading ? (
-  <p>Loading folders...</p>
-) : (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-    {folders.map((folder) => (
-      // --- WRAP THE DIV IN A LINK ---
-      <Link 
-        href={`/folder/${folder._id}`} 
-        key={folder._id}
-        className="block p-5 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-      >
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-semibold text-sky-800">
-            {folder.name}
-          </h3>
-          {folder.password && (
-            <span className="text-gray-500">
-              {/* Simple lock icon (we can replace with a real icon later) */}
-              🔒
-            </span>
-          )}
+      {/* --- MODIFIED: Replaced sky with indigo --- */}
+      <h1 className="pb-4 mb-6 text-3xl font-bold border-b border-gray-300 text-indigo-900">
+        All Folders
+      </h1>
+      {loading ? (
+        <p>Loading folders...</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {folders.map((folder) => (
+            <Link 
+              href={`/folder/${folder._id}`} 
+              key={folder._id}
+              className="block p-5 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-center justify-between mb-2">
+                {/* --- MODIFIED: Replaced sky with indigo --- */}
+                <h3 className="text-xl font-semibold text-indigo-800">
+                  {folder.name}
+                </h3>
+                {folder.password && (
+                  <span className="text-gray-500">
+                    🔒
+                  </span>
+                )}
+              </div>
+              <p className="mb-4 text-gray-600 min-h-[3em]">
+                {folder.description || 'No description.'}
+              </p>
+              <div className="text-sm text-gray-500">
+                Created by: <span className="font-medium">{folder.creatorUsername}</span>
+              </div>
+            </Link>
+          ))}
         </div>
-        <p className="mb-4 text-gray-600 min-h-[3em]">
-          {folder.description || 'No description.'}
-        </p>
-        <div className="text-sm text-gray-500">
-          Created by: <span className="font-medium">{folder.creatorUsername}</span>
-        </div>
-      </Link> // <-- End of the Link component
-      // --- THE DIV IS NOW INSIDE THE LINK ---
-    ))}
-  </div>
-)}
-// ... rest of your component ...
+      )}
     </div>
   );
 }

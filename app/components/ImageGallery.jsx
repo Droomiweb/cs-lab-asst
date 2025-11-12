@@ -2,48 +2,57 @@
 
 import { useSession } from 'next-auth/react';
 
+/**
+ * ImageGallery
+ * Props:
+ * - images: array of image objects (expects _id, url, filename, uploadedBy, uploaderUsername, folderId)
+ * - onImageDeleted: function(imageId) -> parent should remove image locally
+ */
 export default function ImageGallery({ images, onImageDeleted }) {
   const { data: session } = useSession();
 
-  // Handle image deletion
-  const handleDelete = async (imageId, imageUrl) => {
-    if (!confirm('Are you sure you want to delete this image?')) {
-      return;
-    }
+  // Delete handler (uses folderId from first image as fallback)
+  const handleDelete = async (imageId) => {
+    if (!confirm('Are you sure you want to delete this image?')) return;
 
     try {
-      const res = await fetch(`/api/images/${imageId}`, {
+      if (!images?.[0]?.folderId) {
+        alert('Error: Could not determine folder ID.');
+        return;
+      }
+      const folderId = images[0].folderId;
+
+      const res = await fetch(`/api/folder/${folderId}/images/${imageId}`, {
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        // Tell the parent page to remove this image from the list
-        onImageDeleted(imageId);
+        // notify parent to remove locally
+        if (typeof onImageDeleted === 'function') onImageDeleted(imageId);
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Error: ${data.message || 'Failed to delete image.'}`);
       }
     } catch (err) {
       alert(`An error occurred: ${err.message}`);
     }
   };
 
-  // Handle download
+  // Download handler
   const handleDownload = (url, filename) => {
-    // We use fetch to get the blob, then create a local URL to trigger download
     fetch(url)
-      .then(res => res.blob())
-      .then(blob => {
+      .then((res) => res.blob())
+      .then((blob) => {
         const link = document.createElement('a');
         const objectUrl = URL.createObjectURL(blob);
         link.href = objectUrl;
-        link.download = filename;
+        link.download = filename || 'download';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(objectUrl);
       })
-      .catch(err => console.error('Download failed', err));
+      .catch((err) => console.error('Download failed', err));
   };
 
   if (!images || images.length === 0) {
@@ -62,23 +71,26 @@ export default function ImageGallery({ images, onImageDeleted }) {
             src={image.url}
             alt={image.filename}
             className="object-cover w-full h-48 transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
           />
-          
+
           <div className="absolute bottom-0 left-0 right-0 p-2 text-white transition-opacity duration-300 opacity-0 bg-black bg-opacity-60 group-hover:opacity-100">
-            <p className="text-sm truncate">{image.filename}</p>
+            <p className="text-sm font-semibold truncate">{image.filename}</p>
+            <p className="text-xs text-gray-200 truncate">By: {image.uploaderUsername}</p>
+
             <div className="flex items-center justify-between mt-2">
-              {/* Download Button */}
+              {/* Download Button (indigo theme) */}
               <button
                 onClick={() => handleDownload(image.url, image.filename)}
-                className="px-2 py-1 text-xs font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700"
+                className="px-2 py-1 text-xs font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
               >
                 Download
               </button>
 
-              {/* Delete Button (Conditional) */}
-              {session?.user.id === image.uploadedBy && (
+              {/* Delete Button (visible only to uploader) */}
+              {session?.user?.id === image.uploadedBy && (
                 <button
-                  onClick={() => handleDelete(image._id, image.url)}
+                  onClick={() => handleDelete(image._id)}
                   className="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
                 >
                   Delete

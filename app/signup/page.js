@@ -1,7 +1,8 @@
-'use client'; // This must be a Client Component to use hooks (useState, etc.)
+'use client'; 
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Use 'next/navigation' in App Router
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function SignupPage() {
@@ -11,11 +12,18 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/');
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
-    setError(''); // Clear previous errors
-    setMessage(''); // Clear previous messages
+    e.preventDefault(); 
+    setError(''); 
+    setMessage(''); 
 
     if (!username || !password) {
       setError('Username and password are required.');
@@ -34,14 +42,11 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // User created successfully
         setMessage('Signup successful! Redirecting to login...');
-        // Redirect to the login page after 2 seconds
         setTimeout(() => {
           router.push('/login');
         }, 2000);
       } else {
-        // Handle errors (e.g., username already exists)
         setError(data.message || 'Something went wrong.');
       }
     } catch (err) {
@@ -49,88 +54,113 @@ export default function SignupPage() {
     }
   };
 
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-xl text-gray-800">Loading...</p>
+      </div>
+    );
+  }
+
+  if (status === 'authenticated') {
+     return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-xl text-gray-800">Redirecting...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-sky-50">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center text-sky-800">
-          Create Your Account
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username Input */}
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
-            />
+    status === 'unauthenticated' && (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-xl">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-indigo-600">
+              FileShare
+            </h2>
           </div>
+          <h1 className="text-3xl font-bold text-center text-gray-900">
+            Create Your Account
+          </h1>
 
-          {/* Password Input */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
-              />
-              {/* Show/Hide Password Button */}
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 px-3 py-2 text-sm text-gray-600"
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+            {/* Username Input */}
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                // --- MODIFIED: Set to "off" ---
+                autoComplete="off"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  // --- MODIFIED: Set to "off" (was "new-password") ---
+                  autoComplete="off"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 px-3 py-2 text-sm text-gray-600"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div>
+              <button
+                type="submit"
+                className="w-full px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                Sign Up
               </button>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              className="w-full px-4 py-2 font-semibold text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
-            >
-              Sign Up
-            </button>
-          </div>
+            {error && (
+              <p className="text-sm text-center text-red-500">{error}</p>
+            )}
+            {message && (
+              <p className="text-sm text-center text-green-500">{message}</p>
+            )}
+          </form>
 
-          {/* Error and Message Display */}
-          {error && (
-            <p className="text-sm text-center text-red-500">{error}</p>
-          )}
-          {message && (
-            <p className="text-sm text-center text-green-500">{message}</p>
-          )}
-        </form>
-
-        <p className="text-sm text-center text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-sky-600 hover:text-sky-500">
-            Log in
-          </Link>
-        </p>
+          <p className="text-sm text-center text-gray-600">
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Log in
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    )
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 
 // Import all our components
@@ -32,6 +32,13 @@ export default function FolderPage() {
   // --- State for toggling views ---
   const [view, setView] = useState('images'); // 'images' or 'codes'
 
+  // --- State for Add Content Modal ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalView, setAddModalView] = useState('options'); // 'options', 'image', 'code'
+
+  // --- State for Search ---
+  const [searchQuery, setSearchQuery] = useState('');
+
   // --- 1. Fetch Folder Data (Password Check) ---
   const fetchFolderData = async () => {
     if (!folderId) return;
@@ -58,9 +65,9 @@ export default function FolderPage() {
       const res = await fetch(`/api/folder/${folderId}/images`);
       if (!res.ok) throw new Error('Could not fetch images');
       const data = await res.json();
-      setImages(data.images);
+      setImages(data.images || []);
     } catch (err) {
-      console.error(err.message); // Log error but don't block UI
+      console.error(err.message);
     } finally {
       setLoadingImages(false);
     }
@@ -74,9 +81,9 @@ export default function FolderPage() {
       const res = await fetch(`/api/folder/${folderId}/codes`);
       if (!res.ok) throw new Error('Could not fetch codes');
       const data = await res.json();
-      setCodes(data.codes);
+      setCodes(data.codes || []);
     } catch (err) {
-      console.error(err.message); // Log error but don't block UI
+      console.error(err.message);
     } finally {
       setLoadingCodes(false);
     }
@@ -95,7 +102,7 @@ export default function FolderPage() {
       fetchCodes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVerified, folderId]); // Re-run if isVerified changes
+  }, [isVerified, folderId]);
 
   // --- 4. Handle Password Submission ---
   const handlePasswordSubmit = async (e) => {
@@ -109,7 +116,7 @@ export default function FolderPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setIsVerified(true); // Grant access!
+        setIsVerified(true);
       } else {
         setError(data.message || 'Incorrect password.');
       }
@@ -120,21 +127,46 @@ export default function FolderPage() {
 
   // --- 5. Handler for Image Deletion ---
   const handleImageDeleted = (imageId) => {
+    // optimistic local update
     setImages((prev) => prev.filter((img) => img._id !== imageId));
   };
 
   // --- 6. Handler for Code Deletion ---
   const handleCodeDeleted = (codeId) => {
+    // optimistic local update
     setCodes((prev) => prev.filter((c) => c._id !== codeId));
   };
 
-  // (We'll use fetchCodes as the onUploadComplete for the code uploader)
+  // --- Handlers for Add Content Modal ---
+  const openAddModal = () => {
+    setAddModalView('options');
+    setIsAddModalOpen(true);
+  };
 
-  // --- 7. Render Logic ---
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  // --- Filtered lists based on search query (memoized) ---
+  const filteredImages = useMemo(() => {
+    if (!searchQuery) return images;
+    return images.filter((image) =>
+      (image.filename || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [images, searchQuery]);
+
+  const filteredCodes = useMemo(() => {
+    if (!searchQuery) return codes;
+    return codes.filter((code) =>
+      (code.filename || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [codes, searchQuery]);
+
+  // --- Render Logic ---
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-xl text-sky-800">Loading folder...</p>
+        <p className="text-xl text-indigo-800">Loading folder...</p>
       </div>
     );
   }
@@ -150,19 +182,20 @@ export default function FolderPage() {
   // --- RENDER FOLDER CONTENTS (If verified) ---
   if (isVerified && folder) {
     return (
-      <div className="container p-4 mx-auto max-w-7xl">
-        <h1 className="text-3xl font-bold text-sky-900">{folder.name}</h1>
+      <div className="container p-4 mx-auto max-w-7xl pb-24">
+        {/* Modified: indigo theme */}
+        <h1 className="text-3xl font-bold text-indigo-900">{folder.name}</h1>
         <p className="mt-2 text-lg text-gray-600">{folder.description}</p>
 
         <div className="mt-8 border-t border-gray-200 pt-6">
-          {/* --- TABS for Images/Codes --- */}
+          {/* TABS for Images/Codes */}
           <div className="flex mt-4 space-x-4">
             <button
               onClick={() => setView('images')}
               className={`px-6 py-3 font-semibold rounded-md shadow-md ${
                 view === 'images'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-white text-sky-700 hover:bg-sky-50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-indigo-700 hover:bg-indigo-50'
               }`}
             >
               Images
@@ -171,54 +204,202 @@ export default function FolderPage() {
               onClick={() => setView('codes')}
               className={`px-6 py-3 font-semibold rounded-md shadow-md ${
                 view === 'codes'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-white text-sky-700 hover:bg-sky-50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-indigo-700 hover:bg-indigo-50'
               }`}
             >
               Codes
             </button>
           </div>
 
-          {/* --- Image Section --- */}
+          {/* Search Bar */}
+          <div className="my-6">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by filename..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
+          {/* Image Section */}
           {view === 'images' && (
             <div id="image-section">
+              {/* Inline uploader (optional), and also available in modal */}
               {session && (
-                <ImageUploader
-                  folderId={folderId}
-                  onUploadComplete={fetchImages}
-                />
+                <div className="mb-4">
+                  <ImageUploader
+                    folderId={folderId}
+                    onUploadComplete={fetchImages}
+                  />
+                </div>
               )}
+
               {loadingImages ? (
                 <p className="mt-6">Loading images...</p>
               ) : (
-                <ImageGallery
-                  images={images}
-                  onImageDeleted={handleImageDeleted}
-                />
+                <>
+                  {filteredImages.length > 0 && (
+                    <ImageGallery
+                      images={filteredImages}
+                      onImageDeleted={handleImageDeleted}
+                    />
+                  )}
+
+                  {images.length === 0 && (
+                    <div className="p-10 mt-6 text-center bg-gray-100 rounded-lg">
+                      <p className="text-gray-500">
+                        No images have been uploaded to this folder yet.
+                      </p>
+                    </div>
+                  )}
+
+                  {images.length > 0 && filteredImages.length === 0 && (
+                    <div className="p-10 mt-6 text-center bg-gray-100 rounded-lg">
+                      <p className="text-gray-500">
+                        No images found matching &quot;{searchQuery}&quot;.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
-          {/* --- Code Section --- */}
+          {/* Code Section */}
           {view === 'codes' && (
             <div id="code-section">
+              {/* Inline code uploader (optional) */}
               {session && (
-                <CodeUploader
-                  folderId={folderId}
-                  onUploadComplete={fetchCodes}
-                />
+                <div className="mb-4">
+                  <CodeUploader
+                    folderId={folderId}
+                    onUploadComplete={fetchCodes}
+                  />
+                </div>
               )}
+
               {loadingCodes ? (
                 <p className="mt-6">Loading code snippets...</p>
               ) : (
-                <CodeList
-                  codes={codes}
-                  onCodeDeleted={handleCodeDeleted} // <-- PASS THE NEW HANDLER
-                />
+                <>
+                  {filteredCodes.length > 0 && (
+                    <CodeList
+                      codes={filteredCodes}
+                      onCodeDeleted={handleCodeDeleted}
+                    />
+                  )}
+
+                  {codes.length === 0 && (
+                    <div className="p-10 mt-6 text-center bg-gray-100 rounded-lg">
+                      <p className="text-gray-500">
+                        No code snippets have been saved to this folder yet.
+                      </p>
+                    </div>
+                  )}
+
+                  {codes.length > 0 && filteredCodes.length === 0 && (
+                    <div className="p-10 mt-6 text-center bg-gray-100 rounded-lg">
+                      <p className="text-gray-500">
+                        No code snippets found matching &quot;{searchQuery}&quot;.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
         </div>
+
+        {/* Floating Add Button */}
+        {session && (
+          <button
+            onClick={openAddModal}
+            className="fixed bottom-8 right-8 z-50 flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-110"
+            title="Add new file"
+          >
+            <span className="text-4xl font-light">+</span>
+          </button>
+        )}
+
+        {/* Add Content Modal */}
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300">
+            <div
+              className="absolute inset-0 bg-black bg-opacity-70"
+              onClick={closeAddModal}
+            ></div>
+
+            <div className="relative z-[70] w-full max-w-2xl bg-white rounded-lg shadow-xl p-6 transition-all duration-300">
+              {addModalView === 'options' && (
+                <div>
+                  <h2 className="text-2xl font-semibold text-indigo-800 mb-6">
+                    What would you like to add?
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setAddModalView('image')}
+                      className="p-6 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-center"
+                    >
+                      <span className="text-3xl">🖼️</span>
+                      <p className="mt-2 text-lg font-semibold">Upload Images</p>
+                    </button>
+                    <button
+                      onClick={() => setAddModalView('code')}
+                      className="p-6 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-center"
+                    >
+                      <span className="text-3xl">💻</span>
+                      <p className="mt-2 text-lg font-semibold">Save Code Snippet</p>
+                    </button>
+                  </div>
+                  <button
+                    onClick={closeAddModal}
+                    className="mt-6 text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {addModalView === 'image' && (
+                <div>
+                  <button
+                    onClick={() => setAddModalView('options')}
+                    className="mb-4 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                  >
+                    &larr; Back
+                  </button>
+                  <ImageUploader
+                    folderId={folderId}
+                    onUploadComplete={() => {
+                      fetchImages();
+                      closeAddModal();
+                    }}
+                  />
+                </div>
+              )}
+
+              {addModalView === 'code' && (
+                <div>
+                  <button
+                    onClick={() => setAddModalView('options')}
+                    className="mb-4 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                  >
+                    &larr; Back
+                  </button>
+                  <CodeUploader
+                    folderId={folderId}
+                    onUploadComplete={() => {
+                      fetchCodes();
+                      closeAddModal();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -226,9 +407,9 @@ export default function FolderPage() {
   // --- RENDER PASSWORD PROMPT (If not verified) ---
   if (!isVerified) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-sky-50">
-        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-          <h1 className="text-3xl font-bold text-center text-sky-800">
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-gray-100">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-xl">
+          <h1 className="text-3xl font-bold text-center text-indigo-800">
             🔒 This folder is protected
           </h1>
           <p className="text-center text-gray-600">
@@ -250,13 +431,13 @@ export default function FolderPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <div>
               <button
                 type="submit"
-                className="w-full px-4 py-2 font-semibold text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                className="w-full px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
                 Unlock
               </button>
@@ -270,6 +451,6 @@ export default function FolderPage() {
     );
   }
 
-  // Fallback (shouldn't usually reach here)
+  // Fallback
   return null;
 }
