@@ -5,13 +5,17 @@ import { del } from '@vercel/blob';
 import dbConnect from '@/app/lib/mongodb'; 
 import Image from '@/app/models/Image'; 
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, { params: paramsPromise }) { // --- FIX 1 ---
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
+  // --- FIX 2: Await the promise to get the actual params ---
+  const params = await paramsPromise;
   const { imageId } = params;
+  // --- END FIX ---
+
   if (!imageId) {
     return NextResponse.json({ message: 'Image ID required' }, { status: 400 });
   }
@@ -24,7 +28,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: 'Image not found' }, { status: 404 });
     }
 
-    // --- MODIFICATION ---
+    // --- MODIFICATION (This was already correct in your file) ---
     // Allow delete if user is the uploader OR if the user is an admin
     if (image.uploadedBy.toString() !== session.user.id && session.user.role !== 'admin') {
       return NextResponse.json(
