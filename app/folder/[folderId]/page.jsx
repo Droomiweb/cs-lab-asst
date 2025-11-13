@@ -39,6 +39,9 @@ export default function FolderPage() {
   // --- State for Search ---
   const [searchQuery, setSearchQuery] = useState('');
 
+  // --- State for Share Button ---
+  const [copyMessage, setCopyMessage] = useState('');
+
   // --- 1. Fetch Folder Data (Password Check) ---
   const fetchFolderData = async () => {
     if (!folderId) return;
@@ -147,6 +150,13 @@ export default function FolderPage() {
     setIsAddModalOpen(false);
   };
 
+  // --- Handler for Share Folder Button ---
+  const handleShareFolder = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopyMessage('Link copied!');
+    setTimeout(() => setCopyMessage(''), 2000);
+  };
+
   // --- Filtered lists based on search query (memoized) ---
   const filteredImages = useMemo(() => {
     if (!searchQuery) return images;
@@ -186,6 +196,16 @@ export default function FolderPage() {
         {/* Modified: indigo theme */}
         <h1 className="text-3xl font-bold text-indigo-900">{folder.name}</h1>
         <p className="mt-2 text-lg text-gray-600">{folder.description}</p>
+
+        {/* --- ADDED SHARE BUTTON --- */}
+        <button
+          onClick={handleShareFolder}
+          className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-all"
+          style={{ minWidth: '120px' }}
+        >
+          {copyMessage || 'Share Folder'}
+        </button>
+        {/* --- END SHARE BUTTON --- */}
 
         <div className="mt-8 border-t border-gray-200 pt-6">
           {/* TABS for Images/Codes */}

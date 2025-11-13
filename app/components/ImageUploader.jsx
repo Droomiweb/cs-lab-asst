@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * ImageUploader
  * - Drag & drop or click to select images
- * - Uploads to `/api/folder/:folderId/images` via FormData POST
+ * - Uploads to `/api/upload` via raw POST
  * - Shows per-file status (uploading, success, error)
  * - Calls onUploadComplete() after each successful upload (parent can decide what to do)
  *
@@ -25,13 +25,20 @@ export default function ImageUploader({ folderId, onUploadComplete }) {
     );
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch(`/api/folder/${folderId}/images`, {
-        method: 'POST',
-        body: formData,
-      });
+      // --- START FIX ---
+      // 1. Point the fetch request to your /api/upload route.
+      // 2. Add folderId and filename as URL search parameters.
+      // 3. Set the request 'body' to the raw file object.
+      const res = await fetch(
+        `/api/upload?folderId=${folderId}&filename=${encodeURIComponent(
+          file.name
+        )}`,
+        {
+          method: 'POST',
+          body: file,
+        }
+      );
+      // --- END FIX ---
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -82,8 +89,8 @@ export default function ImageUploader({ folderId, onUploadComplete }) {
         uploadFile(entry.file, entry.id);
       });
     },
-    // folderId and onUploadComplete intentionally not in deps for stable callback — they are used inside uploadFile which reads the values via closure.
-    []
+    // folderId and onUploadComplete intentionally not in deps for stable callback
+    [folderId, onUploadComplete]
   );
 
   // Configure react-dropzone

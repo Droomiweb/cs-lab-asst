@@ -7,6 +7,7 @@ import { useState } from 'react';
 export default function CodeList({ codes, onCodeDeleted }) {
   const { data: session } = useSession();
   const [copiedId, setCopiedId] = useState(null);
+  const [copiedUrlId, setCopiedUrlId] = useState(null); // --- ADDED ---
 
   const handleCopy = async (code) => {
     try {
@@ -16,6 +17,15 @@ export default function CodeList({ codes, onCodeDeleted }) {
     } catch (err) {
       alert('Failed to copy to clipboard.');
     }
+  };
+
+  // --- ADDED SHARE LINK HANDLER ---
+  const handleShareLink = (codeId) => {
+    // Construct the absolute URL to the API endpoint
+    const url = `${window.location.origin}/api/code/${codeId}`;
+    navigator.clipboard.writeText(url);
+    setCopiedUrlId(codeId);
+    setTimeout(() => setCopiedUrlId(null), 2000);
   };
 
   const handleDelete = async (codeId) => {
@@ -78,6 +88,14 @@ export default function CodeList({ codes, onCodeDeleted }) {
               {copiedId === code._id ? 'Copied!' : 'Copy Code'}
             </button>
 
+            {/* --- ADDED SHARE LINK BUTTON --- */}
+            <button
+              onClick={() => handleShareLink(code._id)}
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 w-28"
+            >
+              {copiedUrlId === code._id ? 'Copied!' : 'Share Link'}
+            </button>
+            
             {/* Download Button */}
             <a
               href={`/api/code/${code._id}`}
@@ -87,8 +105,8 @@ export default function CodeList({ codes, onCodeDeleted }) {
               Download
             </a>
 
-            {/* Delete Button (only for uploader) */}
-            {session?.user?.id === code.uploadedBy && (
+            {/* Delete Button (only for uploader or admin) */}
+            {(session?.user?.id === code.uploadedBy || session?.user?.role === 'admin') && (
               <button
                 onClick={() => handleDelete(code._id)}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"

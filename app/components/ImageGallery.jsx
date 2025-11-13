@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
+import { useState } from 'react'; // Import useState
 
 /**
  * ImageGallery
@@ -10,6 +11,7 @@ import { useSession } from 'next-auth/react';
  */
 export default function ImageGallery({ images, onImageDeleted }) {
   const { data: session } = useSession();
+  const [copiedId, setCopiedId] = useState(null); // State for copy message
 
   // Delete handler (uses folderId from first image as fallback)
   const handleDelete = async (imageId) => {
@@ -55,6 +57,13 @@ export default function ImageGallery({ images, onImageDeleted }) {
       .catch((err) => console.error('Download failed', err));
   };
 
+  // --- ADDED SHARE HANDLER ---
+  const handleShareImage = (url, imageId) => {
+    navigator.clipboard.writeText(url);
+    setCopiedId(imageId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (!images || images.length === 0) {
     return (
       <div className="p-10 mt-6 text-center bg-gray-100 rounded-lg">
@@ -79,6 +88,14 @@ export default function ImageGallery({ images, onImageDeleted }) {
             <p className="text-xs text-gray-200 truncate">By: {image.uploaderUsername}</p>
 
             <div className="flex items-center justify-between mt-2">
+              {/* --- NEW SHARE BUTTON --- */}
+              <button
+                onClick={() => handleShareImage(image.url, image._id)}
+                className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+              >
+                {copiedId === image._id ? 'Copied!' : 'Share'}
+              </button>
+
               {/* Download Button (indigo theme) */}
               <button
                 onClick={() => handleDownload(image.url, image.filename)}
